@@ -1,0 +1,76 @@
+/* Comparison Slider Styling */
+
+.comparison-container {
+  box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+  border: 2px solid #e0e0e0;
+  cursor: ew-resize;
+  transition: border-color 0.3s ease;
+}
+
+.comparison-container:hover {
+  border-color: #3498db;
+}
+
+#comparison-slider {
+  transition: all 0.2s ease;
+  cursor: ew-resize;
+  z-index: 20;
+}
+
+#comparison-slider:hover {
+  background-color: #2980b9;
+  width: 6px;
+  transform: translateX(-3px);
+}
+
+#comparison-slider:active, #comparison-slider.dragging {
+  background-color: #1f5f8b;
+  width: 6px;
+  transform: translateX(-3px);
+  box-shadow: 0 0 20px rgba(31, 95, 139, 0.5);
+}
+
+/* Larger hit area for easier dragging */
+#comparison-slider::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -20px;
+  width: 40px;
+  height: 100%;
+  cursor: ew-resize;
+  z-index: 25;
+}
+
+/* Visual handle on the slider */
+#comparison-slider .handle {
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+  cursor: ew-resize;
+}
+
+#comparison-slider:hover .handle {
+  transform: translate(-50%, -50%) scale(1.1);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+  background: #2980b9;
+}
+
+#comparison-slider:active .handle, #comparison-slider.dragging .handle {
+  transform: translate(-50%, -50%) scale(1.15);
+  box-shadow: 0 6px 30px rgba(0,0,0,0.5);
+  background: #1f5f8b;
+}
+
+/* Add visual cues for dragging */
+#comparison-slider .handle:hover::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 60px;
+  height: 60px;
+  background: rgba(52, 152, 219, 0.2);
+  border-radius: 50%;
+  z-index: -1;
+} 

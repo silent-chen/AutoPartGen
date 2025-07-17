@@ -1,0 +1,37 @@
+/* Mesh Viewer Styling */
+
+model-viewer {
+  width: 300px;
+  height: 300px;
+}
+
+/* Mesh container styling */
+.mesh-container {
+  border: 1px solid #ddd;
+  background-color: white;
+  overflow: hidden;
+}
+
+#left-container {
+  border-right: 1px solid #3498db;
+}
+
+#right-container {
+  border-left: 1px solid #3498db;
+}
+
+/* Three.js mesh viewer styling */
+#left-mesh, #right-mesh {
+  background-color: white !important;
+  width: 100% !important;
+  height: calc(100% - 40px) !important;
+  display: block !important;
+  overflow: hidden !important;
+}
+
+#left-mesh canvas, #right-mesh canvas {
+  background-color: white !important;
+  width: 100% !important;
+  height: 100% !important;
+  display: block !important;
+} 

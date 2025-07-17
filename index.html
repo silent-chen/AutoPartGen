@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="description"
+        content="We introduce AutoPartGen, a pipeline that generates compositional 3D objects in an autoregressive manner. AutoPartGen can operate automatically or guided by 2D masks. We also show that AutoPartGen can be applied to scene and city generation.">
+  <meta name="keywords" content="3D generation, Generative model, Part decomposition, 3D vision">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AutoPartGen: Autogressive 3D Part Generation and Discovery </title>
+
+  <meta property="og:image" content=""/>
+  <meta property="og:title" content="AutoPartGen: Autogressive 3D Part Generation and Discovery" />
+  <meta property="og:description" content="We introduce AutoPartGen, a pipeline that generates compositional 3D objects in an autoregressive manner. AutoPartGen can operate automatically or guided by 2D masks. We also show that AutoPartGen can be applied to scene and city generation." />
+  <!-- Twitter automatically scrapes this. Go to https://cards-dev.twitter.com/validator?
+      if you update and want to force Twitter to re-scrape. -->
+  <meta property="twitter:card"          content="summary" />
+  <meta property="twitter:title"         content="AutoPartGen: Autogressive 3D Part Generation and Discovery" />
+  <meta property="twitter:description"   content="We introduce AutoPartGen, a pipeline that generates compositional 3D objects in an autoregressive manner. AutoPartGen can operate automatically or guided by 2D masks. We also show that AutoPartGen can be applied to scene and city generation." />
+  <meta property="twitter:image"         content="https://huggingface.co/datasets/silentchen/AutoPartGen-projectpage-assets/resolve/main/teaser.png" />
+
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-VFNFH9CKNX"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+
+    function gtag() {
+      dataLayer.push(arguments);
+    }
+
+    gtag('js', new Date());
+
+    gtag('config', 'G-VFNFH9CKNX');
+  </script>
+  <script
+      type="module"
+      src="https://gradio.s3-us-west-2.amazonaws.com/4.8.0/gradio.js">
+
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+  <!-- Both meshes now use Three.js -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three/examples/js/loaders/GLTFLoader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three/examples/js/controls/OrbitControls.js"></script>
+  
+  <!-- Custom JavaScript Files -->
+  <script src="js/multi-viewer-manager.js"></script>
+  
+  <!-- Custom CSS Files -->
+  <link rel="stylesheet" href="css/explode-slider.css">
+  <link rel="stylesheet" href="css/comparison-slider.css">
+  <link rel="stylesheet" href="css/mesh-viewer.css">
+  <link rel="stylesheet" href="css/gallery.css">
+  <link href="https://fonts.googleapis.com/css?family=Google+Sans|Noto+Sans|Castoro"
+        rel="stylesheet">
+
+  <link rel="stylesheet" href="./static/css/bulma.min.css">
+  <link rel="stylesheet" href="./static/css/bulma-carousel.min.css">
+  <link rel="stylesheet" href="./static/css/bulma-slider.min.css">
+  <link rel="stylesheet" href="./static/css/fontawesome.all.min.css">
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
+  <link rel="stylesheet" href="./static/css/index.css">
+  <link rel="icon" href="https://huggingface.co/datasets/silentchen/AutoPartGen-projectpage-assets/resolve/main/rocket.png">
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script defer src="./static/js/fontawesome.all.min.js"></script>
+  <script src="./static/js/bulma-carousel.min.js"></script>
+  <script src="./static/js/bulma-slider.min.js"></script>
+  <!-- <script src="./static/js/index.js"></script> -->
+</head>
+<body>
+
+<nav class="navbar" role="navigation" aria-label="main navigation">
+  <div class="navbar-brand">
+    <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false">
+      <span aria-hidden="true"></span>
+      <span aria-hidden="true"></span>
+      <span aria-hidden="true"></span>
+    </a>
+  </div>
+  <div class="navbar-menu">
+    <div class="navbar-start" style="flex-grow: 1; justify-content: center;">
+      <a class="navbar-item" href="https://silent-chen.github.io">
+      <span class="icon">
+          <i class="fas fa-home"></i>
+      </span>
+      </a>
+      <div class="navbar-item has-dropdown is-hoverable">
+        <a class="navbar-link">
+          More Research
+        </a>
+        <div class="navbar-dropdown">
+          <a class="navbar-item" href="https://silent-chen.github.io/PartGen/">
+            PartGen
+          </a>
+          <a class="navbar-item" href="https://silent-chen.github.io/DGE/">
+            DGE
+          </a>
+          <a class="navbar-item" href="https://silent-chen.github.io/Shap-Editor/">
+            Shap-Editor
+          </a>
+          <a class="navbar-item" href="https://silent-chen.github.io/layout-guidance">
+            Layout-guidance
+          </a>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</nav>
+
+<section class="section" style="padding:0rem">
+  <div class="hero-body" style="padding:0rem">
+    <div class="container is-max-desktop" style="padding: 25px 30px; margin: 25px auto; box-shadow: 0px 0px 10px #999; border-radius: 15px;">
+      <div class="columns is-centered">
+        <div class="column has-text-centered">
+          <h1 class="title is-3 publication-title" style="font-size: 2.2rem;"> AutoPartGen: Autogressive 3D Part <br> Generation and Discovery</h1>
+          <div class="is-size-5 publication-authors">
+            <span class="author-block">
+              <a href="https://silent-chen.github.io">Minghao Chen</a><sup>1,2</sup>,
+            </span>
+            <span class="author-block"></span>
+              <a href="https://jytime.github.io/">Jianyuan Wang</a><sup>1,2</sup>,
+            </span>
+            <span class="author-block">
+              <a href="https://www.shapovalov.ro/">Roman Shapovalov</a><sup>2</sup>,
+            </span>
+            <span class="author-block"></span>
+              <a href="https://www.tmonnier.com/">Tom Monnier</a><sup>2</sup>
+            </span>
+            <br>
+            <span class="author-block"></span>
+              <a href="https://hyblue.github.io/">Hyunyoung Jung</a><sup>2</sup>,
+            </span>
+            <span class="author-block"></span>
+              <a href="https://wdilin.github.io/">Dilin Wang</a><sup>2</sup>,
+            </span>
+            <span class="author-block"></span>
+              <a href="https://scholar.google.com/citations?user=8KF99lYAAAAJ&hl=en">Rakesh Ranjan</a><sup>2</sup>,
+            </span>
+            <span class="author-block">
+              <a href="https://scholar.google.de/citations?user=n9nXAPcAAAAJ&hl=en">Iro Laina</a><sup>1</sup>
+            </span>
+            <span class="author-block">
+              <a href="https://www.robots.ox.ac.uk/~vedaldi/">Andrea Vedaldi</a><sup>1,2</sup>
+            </span>
+          </div>
+
+          <div class="is-size-5 publication-authors">
+            <span class="author-block"><sup>1</sup>Visual Geometry Group, University of Oxford &nbsp;&nbsp;&nbsp;</span> 
+            <span class="author-block"><sup>2</sup>Meta AI</span>
+          </div>
+
+          <div class="column has-text-centered">
+            <div class="publication-links">
+              <!-- PDF Link. -->
+              <span class="link-block">
+                <a href=""
+                   class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon">
+                      <i class="fas fa-file-pdf"></i>
+                  </span>
+                  <span>Paper</span>
+                </a>
+              </span>
+              <span class="link-block">
+                <a href=""
+                   class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon">
+                      <i class="fab fa-github"></i>
+                  </span>
+                  <span>Code</span>
+                  </a>
+              </span>
+              <span class="link-block">
+                <a href=""
+                   class="external-link button is-normal is-rounded is-dark">
+                  <span>🤗 Demo</span>
+                </a>
+              </span>
+              <br>
+              <br>
+              <br>
+            <video src="https://huggingface.co/datasets/silentchen/AutoPartGen-projectpage-assets/resolve/main/video.mp4" alt="teaser" controls></video> <br>
+            <h2 class="subtitle">
+              <b>tl;dr:</b> We introduce <b>AutoPartGen</b>, a pipeline that generates compositional 3D objects in an autoregressive manner. AutoPartGen can operate automatically or guided by 2D masks. We also show that AutoPartGen can be applied to scene and city generation.
+            </h2>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<section class="section" style="padding:0rem">
+  <div class="container is-max-desktop" style="padding: 25px 50px; margin: 25px auto; box-shadow: 0px 0px 10px #999; border-radius: 15px;">
+
+    <!-- Abstract. -->
+    <div class="columns is-centered has-text-centered" >
+      <div class="column is-full-width">
+        <h2 class="title is-3">Abstract</h2>
+        <div class="content has-text-justified">
+          <p>
+            We introduce AutoPartGen, a model that generates objects composed of 3D parts in an autoregressive manner. This model can take as input an image of an object, 2D masks of the object's parts, or an existing 3D object, and generate a corresponding compositional 3D reconstruction. Our approach builds upon 3DShape2VecSet, a recent latent 3D representation with powerful geometric expressiveness. We observe that this latent space exhibits strong compositional properties, making it particularly well-suited for part-based generation tasks. Specifically, AutoPartGen generates object parts autoregressively, predicting one part at a time while conditioning on previously generated parts and additional inputs, such as 2D images, masks, or 3D objects. This process continues until the model decides that all parts have been generated, thus determining automatically the type and number of parts. The resulting parts can be seamlessly assembled into coherent objects or scenes without requiring additional optimization. We evaluate both the overall 3D generation capabilities and the part-level generation quality of AutoPartGen, demonstrating that it achieves state-of-the-art performance in 3D part generation.
+          </p>
+        </div>
+    </div>
+    <!--/ Abstract. -->
+  </div>
+  </div>
+</section>
+
+
+<section class="section" style="padding:0rem">
+  <div class="container is-max-desktop" style="padding: 25px 50px; margin: 25px auto; box-shadow: 0px 0px 10px #999; border-radius: 15px;">
+    <div class="columns is-centered">
+      <div class="column is-full-width has-text-centered">
+        <div class="content has-text-centered">
+        <h2 class="title is-3">Overview</h2>
+        <div class="content has-text-justified">
+          <p>
+            AutoPartGen generates parts autoregressively.
+            At each step, a 3D latent diffusion model generate the next part, conditioned on the previously generated parts \( z^{(1,\dots,k)} \), the overall object \( \tilde z \), and, optionally, an image \(I\) of the object and an image \( J^{(k)} \) of the part.
+            The latent representation uses 3DShape2VecSet and the diffusion model is a DiT.
+          </p>
+        </div>
+        <div class="content has-text-centered">
+          <img src="https://huggingface.co/datasets/silentchen/AutoPartGen-projectpage-assets/resolve/main/overview.png" width="100%" alt="overview"> <br>
+        </div>
+        </div>
+        </div>
+    </div>
+  </div>
+</section>
+
+
+<section class="section" style="padding:0rem" id="city-scene">
+  <div class="container is-max-desktop" style="padding: 25px 50px; margin: 25px auto; box-shadow: 0px 0px 10px #999; border-radius: 15px;">
+    <div class="columns is-centered">
+      <div class="column is-full-width has-text-centered">
+        <div class="content has-text-centered">
+        <h2 class="title is-3">City Generation</h2>
+          <div class="content has-text-centered">
+            <p>
+              Select a city from the gallery below to view the mesh.
+            </p>
+          </div>
+          
+          <!-- Explode Control Slider -->
+          <div class="columns is-centered" style="margin-bottom: 0.5rem;">
+            <div class="column is-half">
+              <div class="field">
+                <div class="control">
+                  <div class="level" style="font-size: 0.9rem; margin-bottom: -0.3rem;">
+                    <div class="level-left">
+                      <span class="level-item">Combined</span>
+                    </div>
+                    <div class="level-right">
+                      <span class="level-item">Exploded</span>
+                    </div>
+                  </div>
+                  <input id="city-scene-explode-slider" type="range" min="0" max="100" value="0" 
+                         style="width: 100%; height: 8px; background: #ddd; border-radius: 4px; outline: none; -webkit-appearance: none;">
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Submesh Percentage Slider -->
+          <div class="columns is-centered" style="margin-bottom: 0.5rem;">
+            <div class="column is-half">
+              <div class="field">
+                <div class="control">
+                  <div class="level" style="font-size: 0.9rem; margin-bottom: -0.3rem;">
+                    <div class="level-left">
+                      <span class="level-item">Empty</span>
+                    </div>
+                    <div class="level-right">
+                      <span class="level-item">Complete</span>
+                    </div>
+                  </div>
+                  <input id="city-scene-percentage-slider" type="range" min="0" max="100" value="0" 
+                         style="width: 100%; height: 8px; background: #ddd; border-radius: 4px; outline: none; -webkit-appearance: none;">
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Comparison Slider Container -->
+          <div class="comparison-container" style="position: relative; width: 100%; height: 450px; margin: 0 auto; max-width: 800px; border-radius: 10px;">
+            
+            <!-- Left Mesh Viewer -->
+            <div id="city-scene-left-container" class="mesh-container" style="position: absolute; top: 0; left: 0; width: 50%; height: 100%; overflow: hidden; z-index: 1;">
+              <div style="padding: 10px; background: rgba(255,255,255,0.9); text-align: center;">
+                <h4 class="title is-6" style="margin: 0;">Combined</h4>
+              </div>
+              <div id="city-scene-left-mesh" style="width: 100%; height: calc(100% - 40px); background: linear-gradient(#ffffff, #ada996);">
+                <!-- Three.js canvas will be inserted here -->
+              </div>
+            </div>
+            
+            <!-- Right Mesh Viewer -->
+            <div id="city-scene-right-container" class="mesh-container" style="position: absolute; top: 0; right: 0; width: 50%; height: 100%; overflow: hidden; z-index: 1;">
+              <div style="padding: 10px; background: rgba(255,255,255,0.9); text-align: center;">
+                <h4 class="title is-6" style="margin: 0;">Exploded</h4>
+              </div>
+              <div id="city-scene-right-mesh" style="width: 100%; height: calc(100% - 40px); background: linear-gradient(#ffffff, #ada996);">
+                <!-- Three.js canvas will be inserted here -->
+              </div>
+            </div>
+            
+            <!-- Comparison Slider -->
+            <div id="city-scene-comparison-slider" style="position: absolute; top: 0; left: 50%; width: 4px; height: 100%; background: #3498db; cursor: ew-resize; z-index: 10; transform: translateX(-2px);">
+              <div class="handle" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 40px; height: 40px; background: #3498db; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 10px rgba(0,0,0,0.3); border: 2px solid white;">
+                <div style="width: 6px; height: 6px; background: white; border-radius: 50%;"></div>
+              </div>
+            </div>
+            
+          </div>
+          
+          <!-- Image Gallery -->
+          <div class="content has-text-centered" style="margin-top: 2rem;">            
+            <!-- Gallery Container -->
+            <div class="gallery-container" style="position: relative; width: 100%; max-width: 100%; margin: 0 auto; box-sizing: border-box;">
+              
+              <!-- Static Gallery -->
+              <div class="image-gallery" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem; padding: 1rem; margin: 0 auto; width: 100%;">
+                <!-- Gallery items will be populated by JavaScript -->
+              </div>
+            </div>
+          </div>
+          <div class="content has-text-centered">
+            <!-- Selection Instructions -->
+            <div class="column is-full-width has-text-centered" style="background-color: #e8f4f8; border-radius: 8px; border-left: 4px solid #3498db;">
+              <p style="margin: 0; font-size: 0.9rem; color: #2c3e50;">
+                <strong>Instructions:</strong> Click on any image to load the corresponding mesh pair. 
+                <br><strong>Explode:</strong> Use the explode slider to separate parts in the right mesh.
+                <br><strong>Autoregressive part generation:</strong> Use the autoregressive slider to control the generation process of the parts.
+              </p>
+            </div>
+          </div>
+        </div>
+        </div>
+    </div>
+  </div>
+</section>
+
+
+<section class="section" style="padding:0rem" id="scene-generation">
+  <div class="container is-max-desktop" style="padding: 25px 50px; margin: 25px auto; box-shadow: 0px 0px 10px #999; border-radius: 15px;">
+    <div class="columns is-centered">
+      <div class="column is-full-width has-text-centered">
+        <div class="content has-text-centered">
+        <h2 class="title is-3">Scene Generation</h2>
+          <div class="content has-text-centered">
+            <p>
+              Select a scene from the gallery below to view the mesh.
+            </p>
+          </div>
+          
+          <!-- Explode Control Slider -->
+          <div class="columns is-centered" style="margin-bottom: 0.5rem;">
+            <div class="column is-half">
+              <div class="field">
+                <div class="control">
+                  <div class="level" style="font-size: 0.9rem; margin-bottom: -0.3rem;">
+                    <div class="level-left">
+                      <span class="level-item">Combined</span>
+                    </div>
+                    <div class="level-right">
+                      <span class="level-item">Exploded</span>
+                    </div>
+                  </div>
+                  <input id="explode-slider" type="range" min="0" max="100" value="0" 
+                         style="width: 100%; height: 8px; background: #ddd; border-radius: 4px; outline: none; -webkit-appearance: none;">
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Submesh Percentage Slider -->
+          <div class="columns is-centered" style="margin-bottom: 0.5rem;">
+            <div class="column is-half">
+              <div class="field">
+                <div class="control">
+                  <div class="level" style="font-size: 0.9rem; margin-bottom: -0.3rem;">
+                    <div class="level-left">
+                      <span class="level-item">Empty</span>
+                    </div>
+                    <div class="level-right">
+                      <span class="level-item">Complete</span>
+                    </div>
+                  </div>
+                  <input id="scene-generation-percentage-slider" type="range" min="0" max="100" value="100" 
+                         style="width: 100%; height: 8px; background: #ddd; border-radius: 4px; outline: none; -webkit-appearance: none;">
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Comparison Slider Container -->
+          <div class="comparison-container" style="position: relative; width: 100%; height: 450px; margin: 0 auto; max-width: 800px; border-radius: 10px;">
+            
+            <!-- Left Mesh Viewer -->
+            <div id="left-container" class="mesh-container" style="position: absolute; top: 0; left: 0; width: 50%; height: 100%; overflow: hidden; z-index: 1;">
+              <div style="padding: 10px; background: rgba(255,255,255,0.9); text-align: center;">
+                <h4 class="title is-6" style="margin: 0;">Combined</h4>
+              </div>
+              <div id="left-mesh" style="width: 100%; height: calc(100% - 40px); background: linear-gradient(#ffffff, #ada996);">
+                <!-- Three.js canvas will be inserted here -->
+              </div>
+            </div>
+            
+            <!-- Right Mesh Viewer -->
+            <div id="right-container" class="mesh-container" style="position: absolute; top: 0; right: 0; width: 50%; height: 100%; overflow: hidden; z-index: 1;">
+              <div style="padding: 10px; background: rgba(255,255,255,0.9); text-align: center;">
+                <h4 class="title is-6" style="margin: 0;">Exploded</h4>
+              </div>
+              <div id="right-mesh" style="width: 100%; height: calc(100% - 40px); background: linear-gradient(#ffffff, #ada996);">
+                <!-- Three.js canvas will be inserted here -->
+              </div>
+            </div>
+            
+            <!-- Comparison Slider -->
+            <div id="comparison-slider" style="position: absolute; top: 0; left: 50%; width: 4px; height: 100%; background: #3498db; cursor: ew-resize; z-index: 10; transform: translateX(-2px);">
+              <div class="handle" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 40px; height: 40px; background: #3498db; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 10px rgba(0,0,0,0.3); border: 2px solid white;">
+                <div style="width: 6px; height: 6px; background: white; border-radius: 50%;"></div>
+              </div>
+            </div>
+            
+          </div>
+          
+          <!-- Image Gallery -->
+          <div class="content has-text-centered" style="margin-top: 2rem;">            
+            <!-- Gallery Container -->
+            <div class="gallery-container" style="position: relative; width: 100%; max-width: 100%; margin: 0 auto; box-sizing: border-box;">
+              
+              <!-- Static Gallery -->
+              <div class="image-gallery" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem; padding: 1rem; margin: 0 auto; width: 100%;">
+              
+              <!-- Each image represents a mesh pair -->
+              <div class="mesh-pair-option" 
+                   data-left-mesh="resources/image_to_parts/glbs/crab.glb" 
+                   data-right-mesh="resources/image_to_parts/glbs/crab.glb"
+                   style="width: 150px; cursor: pointer; transition: transform 0.3s;">
+                <img src="resources/image_to_parts/images/crab.png" alt="Crab" style="width: 100%; height: 120px; object-fit: cover; border-radius: 8px; border: 3px solid #ddd; transition: all 0.3s;" onerror="this.style.display='none'">
+              </div>
+              
+              <div class="mesh-pair-option" 
+                   data-left-mesh="resources/image_to_parts/glbs/bear_dancing.glb" 
+                   data-right-mesh="resources/image_to_parts/glbs/bear_dancing.glb"
+                   style="width: 150px; cursor: pointer; transition: transform 0.3s;">
+                <img src="resources/image_to_parts/images/bear_dancing.png" alt="Bear Dancing" style="width: 100%; height: 120px; object-fit: cover; border-radius: 8px; border: 3px solid #ddd; transition: all 0.3s;" onerror="this.style.display='none'">
+              </div>
+              
+              <div class="mesh-pair-option" 
+                   data-left-mesh="resources/image_to_parts/glbs/dozer.glb" 
+                   data-right-mesh="resources/image_to_parts/glbs/dozer.glb"
+                   style="width: 150px; cursor: pointer; transition: transform 0.3s;">
+                <img src="resources/image_to_parts/images/dozer.png" alt="Dozer" style="width: 100%; height: 120px; object-fit: cover; border-radius: 8px; border: 3px solid #ddd; transition: all 0.3s;" onerror="this.style.display='none'">
+              </div>
+              
+              <div class="mesh-pair-option" 
+                   data-left-mesh="resources/image_to_parts/glbs/cars_2.glb" 
+                   data-right-mesh="resources/image_to_parts/glbs/cars_2.glb"
+                   style="width: 150px; cursor: pointer; transition: transform 0.3s;">
+                <img src="resources/image_to_parts/images/bear_in_armor.png" alt="Bear in Armor" style="width: 100%; height: 120px; object-fit: cover; border-radius: 8px; border: 3px solid #ddd; transition: all 0.3s;" onerror="this.style.display='none'">
+              </div>
+
+            </div>
+          </div>
+          
+        </div>
+        </div>
+    </div>
+  </div>
+</section>
+
+
+<section class="section" style="padding:0rem" id="image-to-parts">
+  <div class="container is-max-desktop" style="padding: 25px 50px; margin: 25px auto; box-shadow: 0px 0px 10px #999; border-radius: 15px;">
+    <div class="columns is-centered">
+      <div class="column is-full-width has-text-centered">
+        <div class="content has-text-centered">
+        <h2 class="title is-3">Image to Parts</h2>
+          <div class="content has-text-centered">
+            <p>
+              Select images from the gallery below to compare Combined and exploded meshes.
+            </p>
+          </div>
+          
+          <!-- Explode Control Slider -->
+          <div class="columns is-centered" style="margin-bottom: 0.5rem;">
+            <div class="column is-half">
+              <div class="field">
+                <div class="control">
+                  <div class="level" style="font-size: 0.9rem; margin-bottom: -0.3rem;">
+                    <div class="level-left">
+                      <span class="level-item">Combined</span>
+                    </div>
+                    <div class="level-right">
+                      <span class="level-item">Exploded</span>
+                    </div>
+                  </div>
+                  <input id="image-to-parts-explode-slider" type="range" min="0" max="100" value="0" 
+                         style="width: 100%; height: 8px; background: #ddd; border-radius: 4px; outline: none; -webkit-appearance: none;">
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Submesh Percentage Slider -->
+          <div class="columns is-centered" style="margin-bottom: 0.5rem;">
+            <div class="column is-half">
+              <div class="field">
+                <div class="control">
+                  <div class="level" style="font-size: 0.9rem; margin-bottom: -0.3rem;">
+                    <div class="level-left">
+                      <span class="level-item">Empty</span>
+                    </div>
+                    <div class="level-right">
+                      <span class="level-item">Complete</span>
+                    </div>
+                  </div>
+                  <input id="image-to-parts-percentage-slider" type="range" min="0" max="100" value="100" 
+                         style="width: 100%; height: 8px; background: #ddd; border-radius: 4px; outline: none; -webkit-appearance: none;">
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Comparison Slider Container -->
+          <div class="comparison-container" style="position: relative; width: 100%; height: 450px; margin: 0 auto; max-width: 800px; border-radius: 10px;">
+            
+            <!-- Left Mesh Viewer -->
+            <div id="image-to-parts-left-container" class="mesh-container" style="position: absolute; top: 0; left: 0; width: 50%; height: 100%; overflow: hidden; z-index: 1;">
+              <div style="padding: 10px; background: rgba(255,255,255,0.9); text-align: center;">
+                <h4 class="title is-6" style="margin: 0;">Combined</h4>
+              </div>
+              <div id="image-to-parts-left-mesh" style="width: 100%; height: calc(100% - 40px); background: linear-gradient(#ffffff, #ada996);">
+                <!-- Three.js canvas will be inserted here -->
+              </div>
+            </div>
+            
+            <!-- Right Mesh Viewer -->
+            <div id="image-to-parts-right-container" class="mesh-container" style="position: absolute; top: 0; right: 0; width: 50%; height: 100%; overflow: hidden; z-index: 1;">
+              <div style="padding: 10px; background: rgba(255,255,255,0.9); text-align: center;">
+                <h4 class="title is-6" style="margin: 0;">Exploded</h4>
+              </div>
+              <div id="image-to-parts-right-mesh" style="width: 100%; height: calc(100% - 40px); background: linear-gradient(#ffffff, #ada996);">
+                <!-- Three.js canvas will be inserted here -->
+              </div>
+            </div>
+            
+            <!-- Comparison Slider -->
+            <div id="image-to-parts-comparison-slider" style="position: absolute; top: 0; left: 50%; width: 4px; height: 100%; background: #3498db; cursor: ew-resize; z-index: 10; transform: translateX(-2px);">
+              <div class="handle" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 40px; height: 40px; background: #3498db; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 10px rgba(0,0,0,0.3); border: 2px solid white;">
+                <div style="width: 6px; height: 6px; background: white; border-radius: 50%;"></div>
+              </div>
+            </div>
+            
+          </div>
+          
+          <!-- Image Gallery -->
+          <div class="content has-text-centered" style="margin-top: 2rem;">            
+            <!-- Gallery Container -->
+            <div class="gallery-container" style="position: relative; width: 100%; max-width: 100%; margin: 0 auto; box-sizing: border-box;">
+              
+              <!-- Static Gallery -->
+              <div class="image-gallery" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem; padding: 1rem; margin: 0 auto; width: 100%;">
+                <!-- Gallery items will be populated by JavaScript -->
+              </div>
+            </div>
+          </div>
+        </div>
+        </div>
+    </div>
+  </div>
+</section>
+
+
+<section class="section" style="padding:0rem" id="object-to-parts">
+  <div class="container is-max-desktop" style="padding: 25px 50px; margin: 25px auto; box-shadow: 0px 0px 10px #999; border-radius: 15px;">
+    <div class="columns is-centered">
+      <div class="column is-full-width has-text-centered">
+        <div class="content has-text-centered">
+        <h2 class="title is-3">Object to Parts</h2>
+          <div class="content has-text-centered">
+            <p>
+              Select an object from the gallery below to compare combined and exploded meshes.
+            </p>
+          </div>
+          
+          <!-- Explode Control Slider -->
+          <div class="columns is-centered" style="margin-bottom: 0.5rem;">
+            <div class="column is-half">
+              <div class="field">
+                <div class="control">
+                  <div class="level" style="font-size: 0.9rem; margin-bottom: -0.3rem;">
+                    <div class="level-left">
+                      <span class="level-item">Combined</span>
+                    </div>
+                    <div class="level-right">
+                      <span class="level-item">Exploded</span>
+                    </div>
+                  </div>
+                  <input id="explode-slider" type="range" min="0" max="100" value="0" 
+                         style="width: 100%; height: 8px; background: #ddd; border-radius: 4px; outline: none; -webkit-appearance: none;">
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Submesh Percentage Slider -->
+          <div class="columns is-centered" style="margin-bottom: 0.5rem;">
+            <div class="column is-half">
+              <div class="field">
+                <div class="control">
+                  <div class="level" style="font-size: 0.9rem; margin-bottom: -0.3rem;">
+                    <div class="level-left">
+                      <span class="level-item">Empty</span>
+                    </div>
+                    <div class="level-right">
+                      <span class="level-item">Complete</span>
+                    </div>
+                  </div>
+                  <input id="object-to-parts-percentage-slider" type="range" min="0" max="100" value="100" 
+                         style="width: 100%; height: 8px; background: #ddd; border-radius: 4px; outline: none; -webkit-appearance: none;">
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Comparison Slider Container -->
+          <div class="comparison-container" style="position: relative; width: 100%; height: 450px; margin: 0 auto; max-width: 800px; border-radius: 10px;">
+            
+            <!-- Left Mesh Viewer -->
+            <div id="left-container" class="mesh-container" style="position: absolute; top: 0; left: 0; width: 50%; height: 100%; overflow: hidden; z-index: 1;">
+              <div style="padding: 10px; background: rgba(255,255,255,0.9); text-align: center;">
+                <h4 class="title is-6" style="margin: 0;">Combined</h4>
+              </div>
+              <div id="left-mesh" style="width: 100%; height: calc(100% - 40px); background: linear-gradient(#ffffff, #ada996);">
+                <!-- Three.js canvas will be inserted here -->
+              </div>
+            </div>
+            
+            <!-- Right Mesh Viewer -->
+            <div id="right-container" class="mesh-container" style="position: absolute; top: 0; right: 0; width: 50%; height: 100%; overflow: hidden; z-index: 1;">
+              <div style="padding: 10px; background: rgba(255,255,255,0.9); text-align: center;">
+                <h4 class="title is-6" style="margin: 0;">Exploded</h4>
+              </div>
+              <div id="right-mesh" style="width: 100%; height: calc(100% - 40px); background: linear-gradient(#ffffff, #ada996);">
+                <!-- Three.js canvas will be inserted here -->
+              </div>
+            </div>
+            
+            <!-- Comparison Slider -->
+            <div id="comparison-slider" style="position: absolute; top: 0; left: 50%; width: 4px; height: 100%; background: #3498db; cursor: ew-resize; z-index: 10; transform: translateX(-2px);">
+              <div class="handle" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 40px; height: 40px; background: #3498db; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 10px rgba(0,0,0,0.3); border: 2px solid white;">
+                <div style="width: 6px; height: 6px; background: white; border-radius: 50%;"></div>
+              </div>
+            </div>
+            
+          </div>
+          
+          <!-- Image Gallery -->
+          <div class="content has-text-centered" style="margin-top: 2rem;">            
+            <!-- Gallery Container -->
+            <div class="gallery-container" style="position: relative; width: 100%; max-width: 100%; margin: 0 auto; box-sizing: border-box;">
+              
+              <!-- Static Gallery -->
+              <div class="image-gallery" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem; padding: 1rem; margin: 0 auto; width: 100%;">
+              
+              <!-- Each image represents a mesh pair -->
+              <div class="mesh-pair-option" 
+                   data-left-mesh="resources/image_to_parts/glbs/crab.glb" 
+                   data-right-mesh="resources/image_to_parts/glbs/crab.glb"
+                   style="width: 150px; cursor: pointer; transition: transform 0.3s;">
+                <img src="resources/image_to_parts/images/crab.png" alt="Crab" style="width: 100%; height: 120px; object-fit: cover; border-radius: 8px; border: 3px solid #ddd; transition: all 0.3s;" onerror="this.style.display='none'">
+              </div>
+              
+              <div class="mesh-pair-option" 
+                   data-left-mesh="resources/image_to_parts/glbs/bear_dancing.glb" 
+                   data-right-mesh="resources/image_to_parts/glbs/bear_dancing.glb"
+                   style="width: 150px; cursor: pointer; transition: transform 0.3s;">
+                <img src="resources/image_to_parts/images/bear_dancing.png" alt="Bear Dancing" style="width: 100%; height: 120px; object-fit: cover; border-radius: 8px; border: 3px solid #ddd; transition: all 0.3s;" onerror="this.style.display='none'">
+              </div>
+              
+              <div class="mesh-pair-option" 
+                   data-left-mesh="resources/image_to_parts/glbs/dozer.glb" 
+                   data-right-mesh="resources/image_to_parts/glbs/dozer.glb"
+                   style="width: 150px; cursor: pointer; transition: transform 0.3s;">
+                <img src="resources/image_to_parts/images/dozer.png" alt="Dozer" style="width: 100%; height: 120px; object-fit: cover; border-radius: 8px; border: 3px solid #ddd; transition: all 0.3s;" onerror="this.style.display='none'">
+              </div>
+              
+              <div class="mesh-pair-option" 
+                   data-left-mesh="resources/image_to_parts/glbs/cars_2.glb" 
+                   data-right-mesh="resources/image_to_parts/glbs/cars_2.glb"
+                   style="width: 150px; cursor: pointer; transition: transform 0.3s;">
+                <img src="resources/image_to_parts/images/bear_in_armor.png" alt="Bear in Armor" style="width: 100%; height: 120px; object-fit: cover; border-radius: 8px; border: 3px solid #ddd; transition: all 0.3s;" onerror="this.style.display='none'">
+              </div>
+
+            </div>
+          </div>
+          
+        </div>
+        </div>
+    </div>
+  </div>
+</section>
+
+
+
+
+
+<section class="section" id="BibTeX" style="padding:0rem">
+  <div class="container is-max-desktop content" style="padding: 25px 50px; margin: 25px auto; box-shadow: 0px 0px 10px #999; border-radius: 15px;">
+    <h2 class="title">BibTeX</h2>
+    <pre><code>To be added</code></pre>
+  </div>
+</section>
+
+
+<footer class="footer">
+  <div class="container">
+    <div class="columns is-centered">
+      <div class="column is-8">
+        <div class="content">
+          <p>
+            This webpage template is adapted from <a
+            href="https://github.com/nerfies/nerfies.github.io">Nerfies</a> and <a
+            href="https://github.com/OmniPart/OmniPart.github.io">OmniPart</a> under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0 License</a>.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
