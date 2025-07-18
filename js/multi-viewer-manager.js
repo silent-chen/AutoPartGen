@@ -36,14 +36,14 @@ class MeshViewerManager {
                 title: 'Mask to Parts',
                 meshPath: `${baseUrl}/mask_to_parts/glbs`,
                 imagePath: `${baseUrl}/mask_to_parts/images`,
-                meshFiles: ['BUILD_A_ROBOT', 'bear_dancing', 'dozer', 'cars_2'] // Using same files for now
+                meshFiles: ['tree_mask_1', 'tree_mask_2'] 
             },
             {
                 id: 'scene-generation',
                 title: 'Scene Generation',
                 meshPath: `${baseUrl}/scene_generation/glbs`,
                 imagePath: `${baseUrl}/scene_generation/images`,
-                meshFiles: ['table', 'room', 'castle', 'castle2', 'office', 'office2'] // Using same files for now
+                meshFiles: ['table', 'room', 'castle', 'castle2', 'office', 'office2'] 
             }
         ];
 
@@ -328,7 +328,9 @@ class SectionViewer {
             'Office2': 'Office 2',
             'Castle': 'CLock Castle',
             "Table": "Study Table",
-            "Demo": "Cozy Town"
+            "Demo": "Cozy Town",
+            "Tree Mask 1": "Tree Mask 1",
+            "Tree Mask 2": "Tree Mask 2"
         };
         
         // Apply special cases

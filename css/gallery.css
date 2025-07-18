@@ -5,6 +5,19 @@
   min-width: 150px;
 }
 
+/* Mask-to-parts specific styling */
+#mask-to-parts .mesh-pair-option {
+  min-width: auto !important;
+  width: auto !important;
+}
+
+#mask-to-parts .mesh-pair-option img {
+  width: auto !important;
+  height: 120px !important;
+  object-fit: contain !important;
+}
+
+
 .mesh-pair-option img {
   transition: all 0.3s ease;
 }
