@@ -1,10 +1,11 @@
 # AutoPartGen
 
-🚀 **Current Status: Final Stage of Code Release Process**
+We have released a reimplementation of AutoPartGen:
 
-We are currently in the final stage of the code release process. The model is undergoing final review before public release.
+https://github.com/facebookresearch/autopartgen
 
-**Planned Release:** Model release is scheduled for the near future. Stay tuned for updates.
+Please note that this release is a clean reimplementation of the method described in the paper, rather than the original internal model.
 
+Thank you for your patience and continued interest in AutoPartGen.
 ---
 
