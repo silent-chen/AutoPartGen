@@ -177,7 +177,9 @@
               <br>
               <br>
               <br>
-            <video src="https://huggingface.co/datasets/silentchen/AutoPartGen-projectpage-assets/resolve/main/video.mp4" alt="teaser" controls></video> <br>
+            <video controls preload="metadata" playsinline>
+              <source src="./static/assets/video.mp4" type="video/mp4">
+            </video> <br>
             <h2 class="subtitle">
               <b>tl;dr:</b> We introduce <b>AutoPartGen</b>, a pipeline that generates compositional 3D objects in an autoregressive manner. AutoPartGen can operate automatically or guided by 2D masks. We also show that AutoPartGen can be applied to scene and city generation.
             </h2>
